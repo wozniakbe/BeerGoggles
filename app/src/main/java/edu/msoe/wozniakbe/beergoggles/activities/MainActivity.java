@@ -2,19 +2,21 @@ package edu.msoe.wozniakbe.beergoggles.activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.app.ListActivity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import android.speech.RecognizerIntent;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -38,30 +40,38 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 import edu.msoe.wozniakbe.beergoggles.BuildConfig;
 import edu.msoe.wozniakbe.beergoggles.R;
+import edu.msoe.wozniakbe.beergoggles.fragments.BeerListFragment;
 import edu.msoe.wozniakbe.beergoggles.src.Beer;
 
 import static android.content.ContentValues.TAG;
 
-public class MainActivity extends ListActivity {
+/**
+ * Author: Ben Wozniak (wozniakbe@msoe.edu)
+ * Main activity which allows users to search for a beer via text, camera, or voice
+ */
+
+public class MainActivity extends AppCompatActivity implements BeerListFragment.OnListFragmentInteractionListener {
 
     private DatabaseReference databaseReference;
     private final String BEERS_PATH = "beers";
     private ArrayList<Beer> beers;
-    private ArrayList<String> beerNames;
 
     private EditText searchText;
     private Button searchButton;
+    private Button cameraButton;
+    private Button voiceButton;
     private TextView ocrText;
-    private ArrayAdapter<String> adapter; // TODO: Change all this to beer object
 
     private TessBaseAPI tessBaseAPI;
-    public static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/BeerGoggles/";
     private static final String TESS_DATA = "/tessdata";
     private String mCurrentPhotoPath;
-    private Uri outputFileDir;
+
+    private final int REQ_CODE_SPEECH_INPUT = 100;
+    private final int REQ_CODE_CAMERA = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,16 +81,25 @@ public class MainActivity extends ListActivity {
         initializeGui();
 
         beers = new ArrayList<>();
-        beerNames = new ArrayList<>();
+        beers.add(new Beer("Name", "IBU", "ABV"));
 
-        adapter=new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1,
-                beerNames);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
 
-        setListAdapter(adapter);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("beers", beers);
+        BeerListFragment beerListFragment = new BeerListFragment();
+        beerListFragment.setArguments(bundle);
+
+        ft.add(R.id.beerListPlaceholder, BeerListFragment.newInstance(beers));
+        ft.commit();
+
         databaseReference = FirebaseDatabase.getInstance().getReference(BEERS_PATH);
     }
 
+    /**
+     * Initialize GUI components as java objects
+     */
     private void initializeGui(){
         this.searchText = findViewById(R.id.searchText);
         this.searchButton = findViewById(R.id.searchButton);
@@ -90,18 +109,27 @@ public class MainActivity extends ListActivity {
                 onSearchClicked();
             }
         });
+        this.cameraButton = findViewById(R.id.cameraButton);
+        this.cameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onCameraClicked();
+            }
+        });
+        this.voiceButton = findViewById(R.id.voiceButton);
+        this.voiceButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dispatchSpeechInputIntent();
+            }
+        });
         this.ocrText = findViewById(R.id.ocrText);
     }
 
-    private void checkPermission() {
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 120);
-        }
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 121);
-        }
-    }
-
+    /**
+     * Launches a new intent which accesses the device's native camera
+     * and returns the picture taken
+     */
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
@@ -119,11 +147,32 @@ public class MainActivity extends ListActivity {
                         BuildConfig.APPLICATION_ID + ".provider",
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                startActivityForResult(takePictureIntent, 1024);
+                startActivityForResult(takePictureIntent, REQ_CODE_CAMERA);
             }
         }
     }
 
+    // Showing google speech input dialog
+
+    private void dispatchSpeechInputIntent() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speechPrompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+
+        }
+    }
+
+    /**
+     * Creates an image file and stores in a temporary directory
+     * @return Returns the file for the image
+     * @throws IOException
+     */
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -141,21 +190,37 @@ public class MainActivity extends ListActivity {
     }
 
     @Override
+    /**
+     * Used to receive the result of the take picture intent,
+     * then imports the tess language data to the device's native storage.
+     * Finally, starts optical character recognition (OCR) on the image text
+     */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1024) {
+        if (requestCode == REQ_CODE_CAMERA) {
             if (resultCode == Activity.RESULT_OK) {
                 prepareTessData();
-                startOCR(outputFileDir);
+                startOCR();
             } else if (resultCode == Activity.RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Result canceled.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Activity result failed.", Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == REQ_CODE_SPEECH_INPUT) {
+            if (resultCode == RESULT_OK && data != null) {
+
+                ArrayList<String> result = data
+                        .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                searchText.setText(result.get(0));
+            }
         }
     }
 
-    private void startOCR(Uri imageUri){
+    /**
+     * Transforms the image file into a bitmap which can be consumed
+     * by the tess-two API
+     */
+    private void startOCR(){
         try{
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = false;
@@ -173,26 +238,24 @@ public class MainActivity extends ListActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
-                beers.clear();
-
                 for (DataSnapshot child: dataSnapshot.getChildren()) {
                     beers.add(child.getValue(Beer.class));
-                    beerNames.add(child.getValue(Beer.class).getName());
+//                    beerNames.add(child.getValue(Beer.class).getName());
                 }
-                adapter.notifyDataSetChanged();
+               // adapter.notifyDataSetChanged();
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                // Getting Post failed, log a message
-                //Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
-                // ...
             }
         };
         databaseReference.orderByChild("name").startAt(searchText.getText().toString()).endAt(searchText.getText().toString()).addListenerForSingleValueEvent(beerListener);
 
     }
 
+    /**
+     * When camera icon is clicked, start the take picture intent
+     */
     private void onCameraClicked(){
         prepareTessData();
         dispatchTakePictureIntent();
@@ -222,31 +285,6 @@ public class MainActivity extends ListActivity {
         }
         tessBaseAPI.end();
         return retStr;
-    }
-
-    /**
-     * TODO: PROBABLY UNUSED. DELETE THIS METHOD IF TRULY UNUSED
-     * @param mgr
-     * @param path
-     * @return
-     */
-    public static Bitmap getBitmapFromAsset(AssetManager mgr, String path) {
-        InputStream is = null;
-        Bitmap bitmap = null;
-        try {
-            is = mgr.open(path);
-            bitmap = BitmapFactory.decodeStream(is);
-        } catch (final IOException e) {
-            bitmap = null;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
-        return bitmap;
     }
 
     /**
@@ -281,5 +319,10 @@ public class MainActivity extends ListActivity {
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
+    }
+
+    @Override
+    public void onListFragmentInteraction(Beer beer) {
+
     }
 }

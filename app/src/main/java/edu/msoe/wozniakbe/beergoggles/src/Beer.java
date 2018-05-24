@@ -1,18 +1,20 @@
 package edu.msoe.wozniakbe.beergoggles.src;
 
 /**
- * Created by ben on 5/9/18.
+ * Author: Ben Wozniak (wozniakbe@msoe.edu)
+ * This class represents a type of beer.
+ * Information includes name, international bitterness unit, and alcohol by volume.
  */
 
 public class Beer {
 
     private String name;
-    private int ibu;
-    private int abv;
+    private String ibu;
+    private String abv;
 
     public Beer(){} // Default required for firebase
 
-    public Beer(String name, int ibu, int abv) {
+    public Beer(String name, String ibu, String abv) {
         this.name = name;
         this.ibu = ibu;
         this.abv = abv;
@@ -25,20 +27,20 @@ public class Beer {
     public void setName(String name) {
         this.name = name;
     }
-/*
-    public int getIbu() {
+
+    public String getIbu() {
         return ibu;
     }
 
-    public void setIbu(int ibu) {
+    public void setIbu(String ibu) {
         this.ibu = ibu;
     }
 
-    public double getAbv() {
+    public String getAbv() {
         return abv;
     }
 
-    public void setAbv(double abv) {
+    public void setAbv(String abv) {
         this.abv = abv;
-    }*/
+    }
 }

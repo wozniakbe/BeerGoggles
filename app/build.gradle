@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+dependencies {
+    implementation 'com.android.support:support-v4:27.+'
+    implementation 'com.android.support:recyclerview-v7:27.+'
+}
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -16,21 +20,22 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
+    }
+
+    dependencies {
+        implementation fileTree(dir: 'libs', include: ['*.jar'])
+        implementation 'com.android.support:appcompat-v7:27.1.1'
+        implementation 'com.android.support:design:27.1.1'
+        implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+        implementation 'com.google.firebase:firebase-database:12.0.1'
+        testImplementation 'junit:junit:4.12'
+        androidTestImplementation 'com.android.support.test:runner:1.0.2'
+        androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+        compile 'com.google.firebase:firebase-core:12.0.1'
+        implementation 'com.rmtheis:tess-two:9.0.0'
+    }
+
+
+
+    apply plugin: 'com.google.gms.google-services'
 }
-
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-    implementation 'com.google.firebase:firebase-database:12.0.1'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    compile 'com.google.firebase:firebase-core:12.0.1'
-    implementation 'com.rmtheis:tess-two:9.0.0'
-}
-
-
-
-apply plugin: 'com.google.gms.google-services'}
