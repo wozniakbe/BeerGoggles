@@ -154,8 +154,11 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
         }
     }
 
-    // Showing google speech input dialog
 
+    /**
+     * Launches a new intent which utilizes Google's native
+     * voice to text interface
+     */
     private void dispatchSpeechInputIntent() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -191,6 +194,7 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
         return image;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     /**
      * Used to receive the result of the take picture intent,
@@ -222,6 +226,7 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
      * Transforms the image file into a bitmap which can be consumed
      * by the tess-two API
      */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void startOCR(){
         try{
             BitmapFactory.Options options = new BitmapFactory.Options();
@@ -240,11 +245,12 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                FragmentTransaction ft = fragmentManager.beginTransaction();
                 for (DataSnapshot child: dataSnapshot.getChildren()) {
                     beers.add(child.getValue(Beer.class));
-//                    beerNames.add(child.getValue(Beer.class).getName());
+                    ft.replace(R.id.beerListPlaceholder, BeerListFragment.newInstance(beers));
                 }
-               // adapter.notifyDataSetChanged();
             }
 
             @Override
