@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
             public void onCancelled(DatabaseError databaseError) {
             }
         };
-        databaseReference.orderByChild("name").startAt(searchText.getText().toString()).endAt(searchText.getText().toString()).addListenerForSingleValueEvent(beerListener);
+        databaseReference.orderByChild("name").startAt(searchText.getText().toString()).endAt(searchText.getText().toString()).addValueEventListener(beerListener);
 
     }
 
