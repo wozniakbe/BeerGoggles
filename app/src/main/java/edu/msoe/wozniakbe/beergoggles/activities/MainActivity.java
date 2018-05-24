@@ -2,6 +2,8 @@ package edu.msoe.wozniakbe.beergoggles.activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.app.ListActivity;
@@ -267,6 +269,7 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
      * @param bitmap The bitmap of the photo taken which is to be identified
      * @return The text recognized by tess-two OCR from the image
      */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private String getText(Bitmap bitmap){
         try{
             tessBaseAPI = new TessBaseAPI();
@@ -275,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements BeerListFragment.
         }
         String dataPath = getExternalFilesDir("/").getPath() + "/";
         tessBaseAPI.init(dataPath,"eng");
-        tessBaseAPI.setVariable("tessedit_char_whitelist", "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         tessBaseAPI.setImage(bitmap);
         String retStr = "No result";
         try{

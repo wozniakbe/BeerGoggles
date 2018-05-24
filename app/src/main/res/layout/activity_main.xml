@@ -37,7 +37,7 @@
             android:id="@+id/voiceButton"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:background="@drawable/ic_menu_manage"/>
+            android:background="@drawable/baseline_mic_black_18dp"/>
 
     </LinearLayout>
 

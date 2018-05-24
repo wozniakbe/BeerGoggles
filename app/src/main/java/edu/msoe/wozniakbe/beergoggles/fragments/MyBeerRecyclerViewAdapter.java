@@ -13,9 +13,10 @@ import edu.msoe.wozniakbe.beergoggles.src.Beer;
 import java.util.List;
 
 /**
+ * Author: Ben Wozniak (wozniakbe@msoe.edu)
+ * Code generated with Android Studio list fragment wizard
  * {@link RecyclerView.Adapter} that can display a {@link Beer} and makes a call to the
  * specified {@link OnListFragmentInteractionListener}.
- * TODO: Replace the implementation with code for your data type.
  */
 public class MyBeerRecyclerViewAdapter extends RecyclerView.Adapter<MyBeerRecyclerViewAdapter.ViewHolder> {
 
@@ -37,7 +38,6 @@ public class MyBeerRecyclerViewAdapter extends RecyclerView.Adapter<MyBeerRecycl
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
 
-        // TODO: Setup all of the view holder's attributes here
         holder.beer = beers.get(position);
         holder.beerName.setText(beers.get(position).getName());
         holder.beerAbv.setText(beers.get(position).getAbv());
@@ -74,7 +74,6 @@ public class MyBeerRecyclerViewAdapter extends RecyclerView.Adapter<MyBeerRecycl
 
         public ViewHolder(View view) {
             super(view);
-            // TODO: Edit layout and set proper views here
             beerView = view;
             beerName = view.findViewById(R.id.name);
             beerAbv = view.findViewById(R.id.abv);
